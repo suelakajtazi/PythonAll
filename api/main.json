@@ -1,0 +1,22 @@
+{
+  "name":"Suela",
+  "age":16,
+  "address":{
+    "city":"Prishtina",
+    "postcode":"10000",
+    "street":"main",
+    "number":"27"
+  },
+   "contact":[
+    {
+      "type":"email",
+      "value":"hiiii@gmail.com"
+    },
+    {
+      "type":"phone",
+      "value":"0947890637"
+    }
+  ]
+
+
+}
