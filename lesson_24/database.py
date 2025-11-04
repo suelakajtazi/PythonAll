@@ -13,3 +13,10 @@ cursor.execute('''
                salary REAL
             )
             ''')
+
+connect.commit()
+
+cursor.execute('''
+    INSERT INTO employees (name, position, departament, salary)
+    VALUES(?,?,?,?)               
+''',('JOHN' , 'DEVELOPER' ,'IT', '700.00'))
