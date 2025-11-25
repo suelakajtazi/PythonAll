@@ -1,61 +1,101 @@
-import streamlit as st
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from database import get_db_connection
 
-st.title("My notes")
-st.header("Below you can input new notes")
+app = FastAPI()
 
-title = st.text_input("Title of notes")
-note = st.text_area("Notes")
+class Note(BaseModel):
+    title: str
+    content: str
 
-st.markdown(
-    """   
-    <style>
-    body {
-        background-color: black;
-        color: white;
-    }
-    .stApp {
-        background-color: black;
-    }
-    textarea, input {
-        background-color: #222 !important;
-        color: white !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# -------------------------
+# Create a Note
+# -------------------------
+@app.post("/notes")
+def create_note(note: Note):
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
- #qet css e morra ne chat se se disha qysh duhet me incorporate ne python
+    cursor.execute(
+        "INSERT INTO notes (title, content) VALUES (?, ?)",
+        (note.title, note.content)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
 
-st.sidebar.title("Menu")
-page = st.sidebar.radio("Go to", ["Add Note", "View Notes"])
+    conn.close()
+    return {"id": new_id, "title": note.title, "content": note.content}
 
-if st.button("Save Note"):
-    if title and note:
-        st.session_state["notes"].append({"title": title, "note": note})
-        st.success("Note saved!")
-    else:
-        st.warning("Please fill in both fields before saving.")
+# -------------------------
+# Get All Notes
+# -------------------------
+@app.get("/notes")
+def get_notes():
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
-#tani kta u msova :)
+    cursor.execute("SELECT * FROM notes")
+    rows = cursor.fetchall()
 
-st.markdown("""
-<style>
-    .stButton button {
-        background-color: #4CAF50;
-        color: white;
-        border-radius: 5px;
-        height: 2.5em;
-        width: 100%;
-    }
-    .stButton button:hover {
-        background-color: #45a049;
-    }
-    textarea, input {
-        border-radius: 5px;
-        padding: 8px;
-    }
-</style>
-""", unsafe_allow_html=True)
+    conn.close()
+    return [dict(row) for row in rows]
 
-#tash te qikjo e ndreqi opsionin me i view previous notes e di qe skam ban gati sen but ill do better se sdojsha me chat
+# -------------------------
+# Get One Note
+# -------------------------
+@app.get("/notes/{note_id}")
+def get_note(note_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM notes WHERE id = ?", (note_id,))
+    row = cursor.fetchone()
+
+    conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    return dict(row)
+
+# -------------------------
+# Update a Note
+# -------------------------
+@app.put("/notes/{note_id}")
+def update_note(note_id: int, note: Note):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM notes WHERE id = ?", (note_id,))
+    exists = cursor.fetchone()
+    if exists is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    cursor.execute(
+        "UPDATE notes SET title = ?, content = ? WHERE id = ?",
+        (note.title, note.content, note_id)
+    )
+    conn.commit()
+    conn.close()
+
+    return {"id": note_id, "title": note.title, "content": note.content}
+
+# -------------------------
+# Delete a Note
+# -------------------------
+@app.delete("/notes/{note_id}")
+def delete_note(note_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM notes WHERE id = ?", (note_id,))
+    exists = cursor.fetchone()
+    if exists is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    cursor.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+    conn.commit()
+    conn.close()
+
+    return {"status": "deleted"}
