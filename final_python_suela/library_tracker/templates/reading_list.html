@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Reading List</h1>
+
+<div class="form-card">
+    <h3>Add to List</h3>
+    <form method="POST" action="{{ url_for('add_to_reading_list') }}">
+        <input type="text" name="title" placeholder="Title" required>
+        <input type="text" name="author" placeholder="Author" required>
+        <input type="text" name="genre" placeholder="Genre (optional)">
+        <button type="submit">Add</button>
+    </form>
+</div>
+
+<div class="reading-columns">
+    <div class="column">
+        <h3>📋 Want to Read ({{ grouped.want_to_read|length }})</h3>
+        {% for book in grouped.want_to_read %}
+        <div class="list-card">
+            <h4>{{ book.title }}</h4>
+            <p>{{ book.author }}</p>
+            <form method="POST" action="{{ url_for('update_book_status', book_id=book.id) }}">
+                <select name="status" onchange="this.form.submit()">
+                    <option value="want_to_read" selected>Want to Read</option>
+                    <option value="currently_reading">Currently Reading</option>
+                    <option value="read">Read</option>
+                </select>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="column">
+        <h3>📖 Currently Reading ({{ grouped.currently_reading|length }})</h3>
+        {% for book in grouped.currently_reading %}
+        <div class="list-card active">
+            <h4>{{ book.title }}</h4>
+            <p>{{ book.author }}</p>
+            <form method="POST" action="{{ url_for('update_book_status', book_id=book.id) }}">
+                <select name="status" onchange="this.form.submit()">
+                    <option value="want_to_read">Want to Read</option>
+                    <option value="currently_reading" selected>Currently Reading</option>
+                    <option value="read">Read</option>
+                </select>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="column">
+        <h3>✅ Read ({{ grouped.read|length }})</h3>
+        {% for book in grouped.read %}
+        <div class="list-card done">
+            <h4>{{ book.title }}</h4>
+            <p>{{ book.author }}</p>
+            <form method="POST" action="{{ url_for('delete_from_reading_list', book_id=book.id) }}" style="display:inline">
+                <button type="submit" class="btn-delete">Remove</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
